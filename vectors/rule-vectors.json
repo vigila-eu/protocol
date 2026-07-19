@@ -92,6 +92,9 @@
     ],
     "restart_no_respam": [
       "restart_state_reload_no_respam"
+    ],
+    "subject_deduplication": [
+      "duplicate_subjects_deduplicated"
     ]
   },
   "cases": [
@@ -6171,6 +6174,126 @@
                 "trueCount": 3,
                 "firingNotified": true,
                 "lastNotifiedAt": "2026-07-11T09:55:00Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "duplicate_subjects_deduplicated",
+      "description": "A link_state rule whose ifaces param repeats ether1 and a netwatch_down rule whose hosts param repeats 10.20.30.1 on a single fast tick. Each duplicated subject must advance its state exactly once: the link_state rule (D=2) stays PENDING with trueCount=1 (an un-deduplicated Swift engine double-advances and fires early), and the netwatch_down rule (D=1) emits exactly one firing event (an un-deduplicated Java engine re-processes the stale prevState and emits a duplicate). Guards the cross-language deduplication invariant (IOS-8).",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1",
+              "ether1"
+            ],
+            "direction": "down"
+          },
+          "severity": "critical",
+          "debouncePolls": 2,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        },
+        {
+          "id": "r1-nw",
+          "routerId": "r1",
+          "type": "netwatch_down",
+          "params": {
+            "hosts": [
+              "10.20.30.1",
+              "10.20.30.1"
+            ]
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": false,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [
+          {
+            "host": "10.20.30.1",
+            "status": "down",
+            "disabled": false
+          }
+        ],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "netwatch_down",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "10.20.30.1",
+                "title": "Netwatch 10.20.30.1 down",
+                "body": "rtr-brno-core · 10.20.30.1 · status down",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/netwatch_down/10.20.30.1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "pending",
+                "trueCount": 1,
+                "pendingSince": "2026-07-11T10:00:00Z"
+              },
+              {
+                "ruleId": "r1-nw",
+                "subject": "10.20.30.1",
+                "phase": "firing",
+                "firingNotified": true,
+                "lastNotifiedAt": "2026-07-11T10:00:00Z"
               }
             ]
           }

@@ -15,7 +15,7 @@ these snapshots, never the other way. Do not edit these files here.
 
 | File | Cases | What it pins |
 |---|---|---|
-| [`rule-vectors.json`](rule-vectors.json) | 50 cases | The rule-engine reducer: for each case's steps, the expected next state and emitted events. Drives both language implementations (see [`../RULES.md`](../RULES.md)). |
+| [`rule-vectors.json`](rule-vectors.json) | 51 cases | The rule-engine reducer: for each case's steps, the expected next state and emitted events. Drives both language implementations (see [`../RULES.md`](../RULES.md)). |
 | [`e2e-vectors.json`](e2e-vectors.json) | 20 vectors | The end-to-end push crypto: X25519 derivation, HKDF-SHA256, ChaCha20-Poly1305 seal/open, the AAD, the envelope, and the pairing-token / message field shapes (see [`../PUSH.md`](../PUSH.md)). |
 
 ## About the crypto vectors
