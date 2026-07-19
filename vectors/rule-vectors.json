@@ -1,0 +1,6181 @@
+{
+  "version": 1,
+  "schemaVersion": 1,
+  "description": "Shared rule-engine vectors (M3). Both the Java relay engine and the Swift VigilaCore engine must pass every case. Expected events/state are derived from SPEC §5 and docs/contracts/m3-rule-engine-design.md §§1-5. Timestamps are fixed ISO-8601 UTC instants (the engine is pure; now is injected). Loaders MUST ignore unknown top-level keys (schemaVersion, coverageIndex).",
+  "coverageIndex": {
+    "link_state": [
+      "link_state_fires_after_debounce",
+      "link_state_debounce_interrupted",
+      "link_state_resolves",
+      "link_state_direction_both_up_always_notifies",
+      "link_state_multiple_ifaces_independent"
+    ],
+    "router_unreachable": [
+      "router_unreachable_fires_on_third_failure",
+      "router_unreachable_resolves_on_success",
+      "router_unreachable_freezes_snapshot_rules"
+    ],
+    "netwatch_down": [
+      "netwatch_down_fires_and_resolves",
+      "netwatch_empty_hosts_watches_all",
+      "netwatch_unknown_status_fires",
+      "netwatch_disabled_entry_resolves"
+    ],
+    "cpu_sustained": [
+      "cpu_sustained_requires_hold_duration",
+      "cpu_sustained_fires_after_hold",
+      "cpu_dip_resets_hold",
+      "cpu_sustained_resolves"
+    ],
+    "temp_threshold": [
+      "temp_threshold_per_sensor_subjects",
+      "temp_threshold_fires_and_resolves"
+    ],
+    "mem_low": [
+      "mem_low_boundary_exact_percent_ok",
+      "mem_low_fires_and_resolves"
+    ],
+    "reboot_detected": [
+      "reboot_detected_first_sample_no_baseline",
+      "reboot_detected_pulse",
+      "reboot_pulse_deferred_by_quiet_hours_emits_at_boundary"
+    ],
+    "pppoe_drop": [
+      "pppoe_drop_fires_on_window_max_reference",
+      "pppoe_drop_window_expiry_resolves",
+      "pppoe_drop_zero_reference_never_fires"
+    ],
+    "wg_handshake_stale": [
+      "wg_null_handshake_is_stale",
+      "wg_handshake_fires_and_resolves"
+    ],
+    "cold_start_level_semantics": [
+      "already_true_at_first_evaluation_fires"
+    ],
+    "notify_recovery_gate": [
+      "notify_recovery_false_suppresses_resolved",
+      "link_state_direction_both_up_always_notifies"
+    ],
+    "flap_suppression_60s": [
+      "flap_suppression_defers_within_60s",
+      "flap_deferred_firing_emits_after_window",
+      "flap_pair_cancellation"
+    ],
+    "resend": [
+      "resend_after_interval_still_firing",
+      "resend_zero_disables",
+      "resend_suppressed_while_acknowledged"
+    ],
+    "acknowledged_field": [
+      "resend_suppressed_while_acknowledged"
+    ],
+    "quiet_hours": [
+      "quiet_hours_suppresses_warning",
+      "quiet_hours_critical_bypasses",
+      "quiet_hours_boundary_emits_deferred",
+      "quiet_hours_overnight_window",
+      "quiet_hours_timezone_conversion",
+      "quiet_hours_unknown_timezone_fails_open",
+      "quiet_hours_unknown_timezone_no_diagnostic_when_silent"
+    ],
+    "invalid_params": [
+      "cpu_wrong_typed_params_skips_rule"
+    ],
+    "star_router_expansion": [
+      "star_router_rule_applies"
+    ],
+    "unknown_rule_type": [
+      "unknown_rule_type_skipped_with_diagnostic"
+    ],
+    "subject_disappearance_prune": [
+      "subject_disappears_while_firing_freezes_then_prunes"
+    ],
+    "restart_no_respam": [
+      "restart_state_reload_no_respam"
+    ]
+  },
+  "cases": [
+    {
+      "name": "link_state_fires_after_debounce",
+      "description": "running=false on two consecutive fast ticks fires on the second (D=2, H=0).",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1"
+            ],
+            "direction": "down"
+          },
+          "severity": "critical",
+          "debouncePolls": 2,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "pending",
+                "trueCount": 1,
+                "pendingSince": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:00:15Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "link_state",
+                "severity": "critical",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "ether1",
+                "title": "ether1 link down",
+                "body": "rtr-brno-core · ether1 · went down",
+                "ts": "2026-07-11T10:00:15Z",
+                "dedupKey": "r1/link_state/ether1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "trueCount": 2,
+                "firingNotified": true,
+                "firingSince": "2026-07-11T10:00:15Z",
+                "lastNotifiedAt": "2026-07-11T10:00:15Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "link_state_debounce_interrupted",
+      "description": "true then false resets trueCount, emits nothing, informationless OK key prunes.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1"
+            ],
+            "direction": "down"
+          },
+          "severity": "critical",
+          "debouncePolls": 2,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "pending",
+                "trueCount": 1
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:00:15Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": true,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [],
+            "absentKeys": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "link_state_resolves",
+      "description": "FIRING->RESOLVED emits resolved, state returns to OK, key pruned after 60 s.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1"
+            ],
+            "direction": "down"
+          },
+          "severity": "critical",
+          "debouncePolls": 2,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "pending",
+                "trueCount": 1
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:00:15Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "link_state",
+                "severity": "critical",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "ether1",
+                "title": "ether1 link down",
+                "body": "rtr-brno-core · ether1 · went down",
+                "ts": "2026-07-11T10:00:15Z",
+                "dedupKey": "r1/link_state/ether1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "firingNotified": true,
+                "lastNotifiedAt": "2026-07-11T10:00:15Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:01:15Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": true,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "resolved",
+                "rule": "link_state",
+                "severity": "critical",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "ether1",
+                "title": "ether1 link up",
+                "body": "rtr-brno-core · ether1 · came up",
+                "ts": "2026-07-11T10:01:15Z",
+                "dedupKey": "r1/link_state/ether1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "ok",
+                "trueCount": 0,
+                "firingNotified": false,
+                "lastNotifiedAt": "2026-07-11T10:01:15Z",
+                "firingSince": null
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:02:15Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "absentKeys": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "link_state_direction_both_up_always_notifies",
+      "description": "direction:both forces the up-transition notification even with notifyRecovery:false.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1"
+            ],
+            "direction": "both"
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": false,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "link_state",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "ether1",
+                "title": "ether1 link down",
+                "body": "rtr-brno-core · ether1 · went down",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/link_state/ether1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "firingNotified": true,
+                "lastNotifiedAt": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:01:15Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": true,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "resolved",
+                "rule": "link_state",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "ether1",
+                "title": "ether1 link up",
+                "body": "rtr-brno-core · ether1 · came up",
+                "ts": "2026-07-11T10:01:15Z",
+                "dedupKey": "r1/link_state/ether1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "ok",
+                "lastNotifiedAt": "2026-07-11T10:01:15Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "link_state_multiple_ifaces_independent",
+      "description": "Two subjects keep independent keys; firing order equals params order.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1",
+              "ether2"
+            ],
+            "direction": "down"
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          },
+          {
+            "id": "*2",
+            "name": "ether2",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              },
+              {
+                "id": "*2",
+                "name": "ether2",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "link_state",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "ether1",
+                "title": "ether1 link down",
+                "body": "rtr-brno-core · ether1 · went down",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/link_state/ether1"
+              },
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "link_state",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "ether2",
+                "title": "ether2 link down",
+                "body": "rtr-brno-core · ether2 · went down",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/link_state/ether2"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-07-11T10:00:00Z"
+              },
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether2",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:01:15Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": true,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              },
+              {
+                "id": "*2",
+                "name": "ether2",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "resolved",
+                "rule": "link_state",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "ether1",
+                "title": "ether1 link up",
+                "body": "rtr-brno-core · ether1 · came up",
+                "ts": "2026-07-11T10:01:15Z",
+                "dedupKey": "r1/link_state/ether1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "ok",
+                "lastNotifiedAt": "2026-07-11T10:01:15Z"
+              },
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether2",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "router_unreachable_fires_on_third_failure",
+      "description": "Counters 1 and 2 emit nothing; the third failed fast poll fires (effective D=1).",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-unreach",
+          "routerId": "r1",
+          "type": "router_unreachable",
+          "params": {},
+          "severity": "critical",
+          "debouncePolls": 2,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": false,
+          "consecutiveFastPollFailures": 1,
+          "snapshotAbsent": true,
+          "expect": {
+            "events": [],
+            "absentKeys": [
+              {
+                "ruleId": "r1-unreach",
+                "subject": "router"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:00:15Z",
+          "tick": "fast",
+          "tickSucceeded": false,
+          "consecutiveFastPollFailures": 2,
+          "snapshotAbsent": true,
+          "expect": {
+            "events": [],
+            "absentKeys": [
+              {
+                "ruleId": "r1-unreach",
+                "subject": "router"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:00:30Z",
+          "tick": "fast",
+          "tickSucceeded": false,
+          "consecutiveFastPollFailures": 3,
+          "snapshotAbsent": true,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "router_unreachable",
+                "severity": "critical",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "router",
+                "title": "rtr-brno-core unreachable",
+                "body": "rtr-brno-core · router · 3 consecutive fast polls failed",
+                "ts": "2026-07-11T10:00:30Z",
+                "dedupKey": "r1/router_unreachable/router"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-unreach",
+                "subject": "router",
+                "phase": "firing",
+                "trueCount": 1,
+                "firingNotified": true,
+                "lastNotifiedAt": "2026-07-11T10:00:30Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "router_unreachable_resolves_on_success",
+      "description": "One successful fast poll (counter 0) resolves with no recovery debounce.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-unreach",
+          "routerId": "r1",
+          "type": "router_unreachable",
+          "params": {},
+          "severity": "critical",
+          "debouncePolls": 2,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": false,
+          "consecutiveFastPollFailures": 3,
+          "snapshotAbsent": true,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "router_unreachable",
+                "severity": "critical",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "router",
+                "title": "rtr-brno-core unreachable",
+                "body": "rtr-brno-core · router · 3 consecutive fast polls failed",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/router_unreachable/router"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-unreach",
+                "subject": "router",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:01:15Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "resolved",
+                "rule": "router_unreachable",
+                "severity": "critical",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "router",
+                "title": "rtr-brno-core reachable again",
+                "body": "rtr-brno-core · router · reachable again",
+                "ts": "2026-07-11T10:01:15Z",
+                "dedupKey": "r1/router_unreachable/router"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-unreach",
+                "subject": "router",
+                "phase": "ok",
+                "lastNotifiedAt": "2026-07-11T10:01:15Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "router_unreachable_freezes_snapshot_rules",
+      "description": "Failed fast ticks evaluate only router_unreachable; a FIRING link_state key is frozen untouched.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1"
+            ],
+            "direction": "down"
+          },
+          "severity": "critical",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        },
+        {
+          "id": "r1-unreach",
+          "routerId": "r1",
+          "type": "router_unreachable",
+          "params": {},
+          "severity": "critical",
+          "debouncePolls": 2,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "initialState": [
+        {
+          "ruleId": "r1-wan",
+          "routerId": "r1",
+          "subject": "ether1",
+          "phase": "firing",
+          "trueCount": 1,
+          "missingStreak": 0,
+          "firingNotified": true,
+          "acknowledged": false,
+          "firingSince": "2026-07-11T09:59:00Z",
+          "lastNotifiedAt": "2026-07-11T09:59:00Z"
+        }
+      ],
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": false,
+          "consecutiveFastPollFailures": 1,
+          "snapshotAbsent": true,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "firingNotified": true,
+                "firingSince": "2026-07-11T09:59:00Z",
+                "lastNotifiedAt": "2026-07-11T09:59:00Z"
+              }
+            ],
+            "absentKeys": [
+              {
+                "ruleId": "r1-unreach",
+                "subject": "router"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:00:15Z",
+          "tick": "fast",
+          "tickSucceeded": false,
+          "consecutiveFastPollFailures": 2,
+          "snapshotAbsent": true,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "firingNotified": true,
+                "lastNotifiedAt": "2026-07-11T09:59:00Z"
+              }
+            ],
+            "absentKeys": [
+              {
+                "ruleId": "r1-unreach",
+                "subject": "router"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:00:30Z",
+          "tick": "fast",
+          "tickSucceeded": false,
+          "consecutiveFastPollFailures": 3,
+          "snapshotAbsent": true,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "router_unreachable",
+                "severity": "critical",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "router",
+                "title": "rtr-brno-core unreachable",
+                "body": "rtr-brno-core · router · 3 consecutive fast polls failed",
+                "ts": "2026-07-11T10:00:30Z",
+                "dedupKey": "r1/router_unreachable/router"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "firingNotified": true,
+                "firingSince": "2026-07-11T09:59:00Z",
+                "lastNotifiedAt": "2026-07-11T09:59:00Z"
+              },
+              {
+                "ruleId": "r1-unreach",
+                "subject": "router",
+                "phase": "firing",
+                "firingNotified": true,
+                "lastNotifiedAt": "2026-07-11T10:00:30Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "netwatch_down_fires_and_resolves",
+      "description": "Full netwatch lifecycle; subject is the host string.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-nw",
+          "routerId": "r1",
+          "type": "netwatch_down",
+          "params": {
+            "hosts": [
+              "10.20.30.1"
+            ]
+          },
+          "severity": "warning",
+          "debouncePolls": 2,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [
+          {
+            "host": "10.20.30.1",
+            "status": "down",
+            "disabled": false
+          }
+        ],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-nw",
+                "subject": "10.20.30.1",
+                "phase": "pending",
+                "trueCount": 1
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:00:15Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "netwatch_down",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "10.20.30.1",
+                "title": "Netwatch 10.20.30.1 down",
+                "body": "rtr-brno-core · 10.20.30.1 · status down",
+                "ts": "2026-07-11T10:00:15Z",
+                "dedupKey": "r1/netwatch_down/10.20.30.1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-nw",
+                "subject": "10.20.30.1",
+                "phase": "firing",
+                "firingNotified": true,
+                "lastNotifiedAt": "2026-07-11T10:00:15Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:01:15Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "netwatch": [
+              {
+                "host": "10.20.30.1",
+                "status": "up",
+                "disabled": false
+              }
+            ]
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "resolved",
+                "rule": "netwatch_down",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "10.20.30.1",
+                "title": "Netwatch 10.20.30.1 up",
+                "body": "rtr-brno-core · 10.20.30.1 · status up",
+                "ts": "2026-07-11T10:01:15Z",
+                "dedupKey": "r1/netwatch_down/10.20.30.1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-nw",
+                "subject": "10.20.30.1",
+                "phase": "ok",
+                "lastNotifiedAt": "2026-07-11T10:01:15Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "netwatch_empty_hosts_watches_all",
+      "description": "hosts:[] enumerates every snapshot netwatch entry in snapshot order.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-nw",
+          "routerId": "r1",
+          "type": "netwatch_down",
+          "params": {
+            "hosts": []
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [
+          {
+            "host": "8.8.8.8",
+            "status": "up",
+            "disabled": false
+          },
+          {
+            "host": "10.20.30.1",
+            "status": "down",
+            "disabled": false
+          },
+          {
+            "host": "192.168.88.240",
+            "status": "up",
+            "disabled": false
+          }
+        ],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "netwatch_down",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "10.20.30.1",
+                "title": "Netwatch 10.20.30.1 down",
+                "body": "rtr-brno-core · 10.20.30.1 · status down",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/netwatch_down/10.20.30.1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-nw",
+                "subject": "10.20.30.1",
+                "phase": "firing"
+              }
+            ],
+            "absentKeys": [
+              {
+                "ruleId": "r1-nw",
+                "subject": "8.8.8.8"
+              },
+              {
+                "ruleId": "r1-nw",
+                "subject": "192.168.88.240"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "netwatch_unknown_status_fires",
+      "description": "status 'unknown' counts as not-up and fires.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-nw",
+          "routerId": "r1",
+          "type": "netwatch_down",
+          "params": {
+            "hosts": [
+              "10.20.30.1"
+            ]
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [
+          {
+            "host": "10.20.30.1",
+            "status": "unknown",
+            "disabled": false
+          }
+        ],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "netwatch_down",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "10.20.30.1",
+                "title": "Netwatch 10.20.30.1 down",
+                "body": "rtr-brno-core · 10.20.30.1 · status unknown",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/netwatch_down/10.20.30.1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-nw",
+                "subject": "10.20.30.1",
+                "phase": "firing"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "netwatch_disabled_entry_resolves",
+      "description": "Disabling a firing netwatch entry makes the predicate false and resolves it.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-nw",
+          "routerId": "r1",
+          "type": "netwatch_down",
+          "params": {
+            "hosts": [
+              "10.20.30.1"
+            ]
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [
+          {
+            "host": "10.20.30.1",
+            "status": "down",
+            "disabled": false
+          }
+        ],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "netwatch_down",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "10.20.30.1",
+                "title": "Netwatch 10.20.30.1 down",
+                "body": "rtr-brno-core · 10.20.30.1 · status down",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/netwatch_down/10.20.30.1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-nw",
+                "subject": "10.20.30.1",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:01:15Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "netwatch": [
+              {
+                "host": "10.20.30.1",
+                "status": "down",
+                "disabled": true
+              }
+            ]
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "resolved",
+                "rule": "netwatch_down",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "10.20.30.1",
+                "title": "Netwatch 10.20.30.1 up",
+                "body": "rtr-brno-core · 10.20.30.1 · status up",
+                "ts": "2026-07-11T10:01:15Z",
+                "dedupKey": "r1/netwatch_down/10.20.30.1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-nw",
+                "subject": "10.20.30.1",
+                "phase": "ok"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "cpu_sustained_requires_hold_duration",
+      "description": "trueCount reaches D but the y-minute hold is unmet, so the key stays PENDING.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-cpu",
+          "routerId": "r1",
+          "type": "cpu_sustained",
+          "params": {
+            "x": 85,
+            "y": 5
+          },
+          "severity": "warning",
+          "debouncePolls": 2,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 90,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-cpu",
+                "subject": "cpu",
+                "phase": "pending",
+                "trueCount": 1,
+                "pendingSince": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:01:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-cpu",
+                "subject": "cpu",
+                "phase": "pending",
+                "trueCount": 2,
+                "pendingSince": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "cpu_sustained_fires_after_hold",
+      "description": "Fires once both debounce count and the y-minute hold are satisfied; body shows current load.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-cpu",
+          "routerId": "r1",
+          "type": "cpu_sustained",
+          "params": {
+            "x": 85,
+            "y": 5
+          },
+          "severity": "warning",
+          "debouncePolls": 2,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 90,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-cpu",
+                "subject": "cpu",
+                "phase": "pending",
+                "trueCount": 1,
+                "pendingSince": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:05:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "resources": {
+              "cpuLoadPercent": 92,
+              "freeMemoryBytes": 800000000,
+              "totalMemoryBytes": 1000000000,
+              "uptimeSeconds": 788645,
+              "version": "7.15.2 (stable)",
+              "boardName": "RB5009UG+S+"
+            }
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "cpu_sustained",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "cpu",
+                "title": "CPU 92% on rtr-brno-core",
+                "body": "rtr-brno-core · cpu · above 85% for 5 min",
+                "ts": "2026-07-11T10:05:00Z",
+                "dedupKey": "r1/cpu_sustained/cpu"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-cpu",
+                "subject": "cpu",
+                "phase": "firing",
+                "trueCount": 2,
+                "firingSince": "2026-07-11T10:05:00Z",
+                "lastNotifiedAt": "2026-07-11T10:05:00Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "cpu_dip_resets_hold",
+      "description": "One sample at or below x resets both trueCount and pendingSince.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-cpu",
+          "routerId": "r1",
+          "type": "cpu_sustained",
+          "params": {
+            "x": 85,
+            "y": 5
+          },
+          "severity": "warning",
+          "debouncePolls": 2,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 90,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-cpu",
+                "subject": "cpu",
+                "phase": "pending",
+                "trueCount": 1,
+                "pendingSince": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:01:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "resources": {
+              "cpuLoadPercent": 50,
+              "freeMemoryBytes": 800000000,
+              "totalMemoryBytes": 1000000000,
+              "uptimeSeconds": 788645,
+              "version": "7.15.2 (stable)",
+              "boardName": "RB5009UG+S+"
+            }
+          },
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-cpu",
+                "subject": "cpu",
+                "phase": "ok",
+                "trueCount": 0,
+                "pendingSince": null
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:02:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "resources": {
+              "cpuLoadPercent": 90,
+              "freeMemoryBytes": 800000000,
+              "totalMemoryBytes": 1000000000,
+              "uptimeSeconds": 788645,
+              "version": "7.15.2 (stable)",
+              "boardName": "RB5009UG+S+"
+            }
+          },
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-cpu",
+                "subject": "cpu",
+                "phase": "pending",
+                "trueCount": 1,
+                "pendingSince": "2026-07-11T10:02:00Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "cpu_sustained_resolves",
+      "description": "A FIRING cpu incident resolves on the first sample at or below x.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-cpu",
+          "routerId": "r1",
+          "type": "cpu_sustained",
+          "params": {
+            "x": 85,
+            "y": 5
+          },
+          "severity": "warning",
+          "debouncePolls": 2,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 90,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-cpu",
+                "subject": "cpu",
+                "phase": "pending",
+                "trueCount": 1
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:05:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "cpu_sustained",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "cpu",
+                "title": "CPU 90% on rtr-brno-core",
+                "body": "rtr-brno-core · cpu · above 85% for 5 min",
+                "ts": "2026-07-11T10:05:00Z",
+                "dedupKey": "r1/cpu_sustained/cpu"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-cpu",
+                "subject": "cpu",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-07-11T10:05:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:06:15Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "resources": {
+              "cpuLoadPercent": 50,
+              "freeMemoryBytes": 800000000,
+              "totalMemoryBytes": 1000000000,
+              "uptimeSeconds": 788645,
+              "version": "7.15.2 (stable)",
+              "boardName": "RB5009UG+S+"
+            }
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "resolved",
+                "rule": "cpu_sustained",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "cpu",
+                "title": "CPU back to 50% on rtr-brno-core",
+                "body": "rtr-brno-core · cpu · at or below 85%",
+                "ts": "2026-07-11T10:06:15Z",
+                "dedupKey": "r1/cpu_sustained/cpu"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-cpu",
+                "subject": "cpu",
+                "phase": "ok",
+                "lastNotifiedAt": "2026-07-11T10:06:15Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "temp_threshold_per_sensor_subjects",
+      "description": "Each temperature sensor is an independent subject; non-temperature kinds are ignored.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-temp",
+          "routerId": "r1",
+          "type": "temp_threshold",
+          "params": {
+            "x": 70
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [
+          {
+            "name": "temperature",
+            "kind": "temperature",
+            "value": 75,
+            "unit": "C"
+          },
+          {
+            "name": "cpu-temperature",
+            "kind": "temperature",
+            "value": 80,
+            "unit": "C"
+          },
+          {
+            "name": "voltage",
+            "kind": "voltage",
+            "value": 24.2,
+            "unit": "V"
+          }
+        ],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "temp_threshold",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "temperature",
+                "title": "temperature 75°C on rtr-brno-core",
+                "body": "rtr-brno-core · temperature · above 70°C",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/temp_threshold/temperature"
+              },
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "temp_threshold",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "cpu-temperature",
+                "title": "cpu-temperature 80°C on rtr-brno-core",
+                "body": "rtr-brno-core · cpu-temperature · above 70°C",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/temp_threshold/cpu-temperature"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-temp",
+                "subject": "temperature",
+                "phase": "firing"
+              },
+              {
+                "ruleId": "r1-temp",
+                "subject": "cpu-temperature",
+                "phase": "firing"
+              }
+            ],
+            "absentKeys": [
+              {
+                "ruleId": "r1-temp",
+                "subject": "voltage"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "temp_threshold_fires_and_resolves",
+      "description": "Strict > fires; the boundary value x itself resolves (<=x).",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-temp",
+          "routerId": "r1",
+          "type": "temp_threshold",
+          "params": {
+            "x": 70
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [
+          {
+            "name": "cpu-temperature",
+            "kind": "temperature",
+            "value": 75,
+            "unit": "C"
+          }
+        ],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "temp_threshold",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "cpu-temperature",
+                "title": "cpu-temperature 75°C on rtr-brno-core",
+                "body": "rtr-brno-core · cpu-temperature · above 70°C",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/temp_threshold/cpu-temperature"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-temp",
+                "subject": "cpu-temperature",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:01:15Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "healthSensors": [
+              {
+                "name": "cpu-temperature",
+                "kind": "temperature",
+                "value": 70,
+                "unit": "C"
+              }
+            ]
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "resolved",
+                "rule": "temp_threshold",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "cpu-temperature",
+                "title": "cpu-temperature back to 70°C",
+                "body": "rtr-brno-core · cpu-temperature · at or below 70°C",
+                "ts": "2026-07-11T10:01:15Z",
+                "dedupKey": "r1/temp_threshold/cpu-temperature"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-temp",
+                "subject": "cpu-temperature",
+                "phase": "ok"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "mem_low_boundary_exact_percent_ok",
+      "description": "Exactly x% free does not fire (free*100 == x*total, predicate is strict <).",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-mem",
+          "routerId": "r1",
+          "type": "mem_low",
+          "params": {
+            "x": 10
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 100000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "absentKeys": [
+              {
+                "ruleId": "r1-mem",
+                "subject": "memory"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "mem_low_fires_and_resolves",
+      "description": "Integer-math predicate fires; body pct uses Int64 floor division; resolves at >=x.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-mem",
+          "routerId": "r1",
+          "type": "mem_low",
+          "params": {
+            "x": 10
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 90000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "mem_low",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "memory",
+                "title": "Low memory on rtr-brno-core",
+                "body": "rtr-brno-core · memory · 9% free, below 10%",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/mem_low/memory"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-mem",
+                "subject": "memory",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:01:15Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "resources": {
+              "cpuLoadPercent": 5,
+              "freeMemoryBytes": 150000000,
+              "totalMemoryBytes": 1000000000,
+              "uptimeSeconds": 788645,
+              "version": "7.15.2 (stable)",
+              "boardName": "RB5009UG+S+"
+            }
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "resolved",
+                "rule": "mem_low",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "memory",
+                "title": "Memory recovered on rtr-brno-core",
+                "body": "rtr-brno-core · memory · 15% free, at or above 10%",
+                "ts": "2026-07-11T10:01:15Z",
+                "dedupKey": "r1/mem_low/memory"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-mem",
+                "subject": "memory",
+                "phase": "ok"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "reboot_detected_first_sample_no_baseline",
+      "description": "First normal sample has a null baseline: no event, baseline stored.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-reboot",
+          "routerId": "r1",
+          "type": "reboot_detected",
+          "params": {},
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-reboot",
+                "subject": "uptime",
+                "phase": "ok",
+                "trueCount": 0,
+                "lastUptimeSeconds": 788645
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "reboot_detected_pulse",
+      "description": "An uptime drop fires a pulse; phase stays ok, baseline updates, no resolved event ever.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-reboot",
+          "routerId": "r1",
+          "type": "reboot_detected",
+          "params": {},
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-reboot",
+                "subject": "uptime",
+                "phase": "ok",
+                "lastUptimeSeconds": 788645
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:01:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "resources": {
+              "cpuLoadPercent": 5,
+              "freeMemoryBytes": 800000000,
+              "totalMemoryBytes": 1000000000,
+              "uptimeSeconds": 788705,
+              "version": "7.15.2 (stable)",
+              "boardName": "RB5009UG+S+"
+            }
+          },
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-reboot",
+                "subject": "uptime",
+                "phase": "ok",
+                "lastUptimeSeconds": 788705
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:02:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "resources": {
+              "cpuLoadPercent": 5,
+              "freeMemoryBytes": 800000000,
+              "totalMemoryBytes": 1000000000,
+              "uptimeSeconds": 120,
+              "version": "7.15.2 (stable)",
+              "boardName": "RB5009UG+S+"
+            }
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "reboot_detected",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "uptime",
+                "title": "rtr-brno-core rebooted",
+                "body": "rtr-brno-core · uptime · uptime dropped from 788705s to 120s",
+                "ts": "2026-07-11T10:02:00Z",
+                "dedupKey": "r1/reboot_detected/uptime"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-reboot",
+                "subject": "uptime",
+                "phase": "ok",
+                "trueCount": 0,
+                "firingNotified": false,
+                "lastUptimeSeconds": 120,
+                "lastNotifiedAt": "2026-07-11T10:02:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:03:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "resources": {
+              "cpuLoadPercent": 5,
+              "freeMemoryBytes": 800000000,
+              "totalMemoryBytes": 1000000000,
+              "uptimeSeconds": 180,
+              "version": "7.15.2 (stable)",
+              "boardName": "RB5009UG+S+"
+            }
+          },
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-reboot",
+                "subject": "uptime",
+                "phase": "ok",
+                "lastUptimeSeconds": 180
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "pppoe_drop_fires_on_window_max_reference",
+      "description": "Reference is the window maximum; strict Int64 predicate (ref-cur)*100 > x*ref.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-pppoe",
+          "routerId": "r1",
+          "type": "pppoe_drop",
+          "params": {
+            "x": 10,
+            "y": 5
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 100,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-pppoe",
+                "subject": "pppoe",
+                "phase": "ok",
+                "samples": [
+                  {
+                    "ts": "2026-07-11T10:00:00Z",
+                    "value": 100
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:01:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "pppoeActiveCount": 80
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "pppoe_drop",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "pppoe",
+                "title": "PPPoE sessions dropped on rtr-brno-core",
+                "body": "rtr-brno-core · pppoe · 80 active, down 20% from 100 in 5 min",
+                "ts": "2026-07-11T10:01:00Z",
+                "dedupKey": "r1/pppoe_drop/pppoe"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-pppoe",
+                "subject": "pppoe",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-07-11T10:01:00Z",
+                "samples": [
+                  {
+                    "ts": "2026-07-11T10:00:00Z",
+                    "value": 100
+                  },
+                  {
+                    "ts": "2026-07-11T10:01:00Z",
+                    "value": 80
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "pppoe_drop_window_expiry_resolves",
+      "description": "The depressed level ages out of the y-minute window, becomes the new reference, predicate false, resolves.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-pppoe",
+          "routerId": "r1",
+          "type": "pppoe_drop",
+          "params": {
+            "x": 10,
+            "y": 5
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 100,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-pppoe",
+                "subject": "pppoe",
+                "phase": "ok"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:01:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "pppoeActiveCount": 80
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "pppoe_drop",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "pppoe",
+                "title": "PPPoE sessions dropped on rtr-brno-core",
+                "body": "rtr-brno-core · pppoe · 80 active, down 20% from 100 in 5 min",
+                "ts": "2026-07-11T10:01:00Z",
+                "dedupKey": "r1/pppoe_drop/pppoe"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-pppoe",
+                "subject": "pppoe",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-07-11T10:01:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:06:15Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "pppoeActiveCount": 80
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "resolved",
+                "rule": "pppoe_drop",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "pppoe",
+                "title": "PPPoE sessions recovered on rtr-brno-core",
+                "body": "rtr-brno-core · pppoe · 80 active",
+                "ts": "2026-07-11T10:06:15Z",
+                "dedupKey": "r1/pppoe_drop/pppoe"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-pppoe",
+                "subject": "pppoe",
+                "phase": "ok",
+                "samples": [
+                  {
+                    "ts": "2026-07-11T10:06:15Z",
+                    "value": 80
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "pppoe_drop_zero_reference_never_fires",
+      "description": "An all-idle concentrator (ref==0) is never a drop.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-pppoe",
+          "routerId": "r1",
+          "type": "pppoe_drop",
+          "params": {
+            "x": 10,
+            "y": 5
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-pppoe",
+                "subject": "pppoe",
+                "phase": "ok"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:01:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-pppoe",
+                "subject": "pppoe",
+                "phase": "ok"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "wg_null_handshake_is_stale",
+      "description": "A null last-handshake fires; subject is name when present else publicKey.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wg",
+          "routerId": "r1",
+          "type": "wg_handshake_stale",
+          "params": {
+            "x": 5
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": [
+          {
+            "publicKey": "S5gJ1rlOnJZbNTa1mUvbLYZQBPFMteodgfLnZrQ7XzE=",
+            "interfaceName": "wg0",
+            "disabled": false,
+            "name": "laptop-backup"
+          },
+          {
+            "publicKey": "Qm9ndXNLZXlGb3JGaXh0dXJlc09ubHkxMjM0NTY3OD0=",
+            "interfaceName": "wg0",
+            "disabled": false
+          }
+        ]
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "wg_handshake_stale",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "laptop-backup",
+                "title": "WireGuard peer laptop-backup stale",
+                "body": "rtr-brno-core · laptop-backup · no handshake ever",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/wg_handshake_stale/laptop-backup"
+              },
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "wg_handshake_stale",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "Qm9ndXNLZXlGb3JGaXh0dXJlc09ubHkxMjM0NTY3OD0=",
+                "title": "WireGuard peer Qm9ndXNLZXlGb3JGaXh0dXJlc09ubHkxMjM0NTY3OD0= stale",
+                "body": "rtr-brno-core · Qm9ndXNLZXlGb3JGaXh0dXJlc09ubHkxMjM0NTY3OD0= · no handshake ever",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/wg_handshake_stale/Qm9ndXNLZXlGb3JGaXh0dXJlc09ubHkxMjM0NTY3OD0="
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wg",
+                "subject": "laptop-backup",
+                "phase": "firing"
+              },
+              {
+                "ruleId": "r1-wg",
+                "subject": "Qm9ndXNLZXlGb3JGaXh0dXJlc09ubHkxMjM0NTY3OD0=",
+                "phase": "firing"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "wg_handshake_fires_and_resolves",
+      "description": "last-handshake > x*60 (strict) fires; a disabled peer is not enumerated; boundary x*60 resolves.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wg",
+          "routerId": "r1",
+          "type": "wg_handshake_stale",
+          "params": {
+            "x": 5
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": [
+          {
+            "publicKey": "PKA=",
+            "interfaceName": "wg0",
+            "disabled": false,
+            "name": "peer-a",
+            "lastHandshakeSecondsAgo": 400
+          },
+          {
+            "publicKey": "PKB=",
+            "interfaceName": "wg0",
+            "disabled": true,
+            "name": "peer-b",
+            "lastHandshakeSecondsAgo": 100
+          }
+        ]
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "wg_handshake_stale",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "peer-a",
+                "title": "WireGuard peer peer-a stale",
+                "body": "rtr-brno-core · peer-a · last handshake 6 min ago",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/wg_handshake_stale/peer-a"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wg",
+                "subject": "peer-a",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-07-11T10:00:00Z"
+              }
+            ],
+            "absentKeys": [
+              {
+                "ruleId": "r1-wg",
+                "subject": "peer-b"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:01:15Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "wireguardPeers": [
+              {
+                "publicKey": "PKA=",
+                "interfaceName": "wg0",
+                "disabled": false,
+                "name": "peer-a",
+                "lastHandshakeSecondsAgo": 300
+              },
+              {
+                "publicKey": "PKB=",
+                "interfaceName": "wg0",
+                "disabled": true,
+                "name": "peer-b",
+                "lastHandshakeSecondsAgo": 100
+              }
+            ]
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "resolved",
+                "rule": "wg_handshake_stale",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "peer-a",
+                "title": "WireGuard peer peer-a active",
+                "body": "rtr-brno-core · peer-a · last handshake 5 min ago",
+                "ts": "2026-07-11T10:01:15Z",
+                "dedupKey": "r1/wg_handshake_stale/peer-a"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wg",
+                "subject": "peer-a",
+                "phase": "ok"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "already_true_at_first_evaluation_fires",
+      "description": "Level semantics at cold start: a host already down at first evaluation fires (D=1).",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-nw",
+          "routerId": "r1",
+          "type": "netwatch_down",
+          "params": {
+            "hosts": [
+              "10.20.30.1"
+            ]
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [
+          {
+            "host": "10.20.30.1",
+            "status": "down",
+            "disabled": false
+          }
+        ],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "netwatch_down",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "10.20.30.1",
+                "title": "Netwatch 10.20.30.1 down",
+                "body": "rtr-brno-core · 10.20.30.1 · status down",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/netwatch_down/10.20.30.1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-nw",
+                "subject": "10.20.30.1",
+                "phase": "firing"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "notify_recovery_false_suppresses_resolved",
+      "description": "notifyRecovery:false makes the RESOLVED transition happen with no resolved event.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1"
+            ],
+            "direction": "down"
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": false,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "link_state",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "ether1",
+                "title": "ether1 link down",
+                "body": "rtr-brno-core · ether1 · went down",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/link_state/ether1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:01:15Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": true,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "ok",
+                "firingNotified": false,
+                "firingSince": null,
+                "lastNotifiedAt": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "flap_suppression_defers_within_60s",
+      "description": "A second notification less than 60 s after the first is deferred, not emitted.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1"
+            ],
+            "direction": "down"
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "link_state",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "ether1",
+                "title": "ether1 link down",
+                "body": "rtr-brno-core · ether1 · went down",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/link_state/ether1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:00:30Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": true,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "ok",
+                "deferred": "resolved",
+                "lastNotifiedAt": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "flap_deferred_firing_emits_after_window",
+      "description": "A firing deferred by the flap gate emits on a later tick with ts = emission now.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1"
+            ],
+            "direction": "down"
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "initialState": [
+        {
+          "ruleId": "r1-wan",
+          "routerId": "r1",
+          "subject": "ether1",
+          "phase": "ok",
+          "trueCount": 0,
+          "missingStreak": 0,
+          "firingNotified": false,
+          "acknowledged": false,
+          "lastNotifiedAt": "2026-07-11T10:00:00Z"
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:30Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "deferred": "firing",
+                "firingNotified": false,
+                "firingSince": "2026-07-11T10:00:30Z",
+                "lastNotifiedAt": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:01:05Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "link_state",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "ether1",
+                "title": "ether1 link down",
+                "body": "rtr-brno-core · ether1 · went down",
+                "ts": "2026-07-11T10:01:05Z",
+                "dedupKey": "r1/link_state/ether1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "firingNotified": true,
+                "lastNotifiedAt": "2026-07-11T10:01:05Z",
+                "deferred": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "flap_pair_cancellation",
+      "description": "A firing that was deferred (never told) then resolves before emission: emit nothing, deferred cleared.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1"
+            ],
+            "direction": "down"
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "initialState": [
+        {
+          "ruleId": "r1-wan",
+          "routerId": "r1",
+          "subject": "ether1",
+          "phase": "ok",
+          "trueCount": 0,
+          "missingStreak": 0,
+          "firingNotified": false,
+          "acknowledged": false,
+          "lastNotifiedAt": "2026-07-11T10:00:00Z"
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:30Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "deferred": "firing",
+                "firingNotified": false
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:00:45Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": true,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "ok",
+                "deferred": null,
+                "firingNotified": false,
+                "firingSince": null,
+                "trueCount": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "resend_after_interval_still_firing",
+      "description": "While still FIRING, a resend after resendAfterMin emits a firing event with a recomposed body and sets lastResendAt.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-unreach",
+          "routerId": "r1",
+          "type": "router_unreachable",
+          "params": {},
+          "severity": "critical",
+          "debouncePolls": 2,
+          "resendAfterMin": 2,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": false,
+          "consecutiveFastPollFailures": 3,
+          "snapshotAbsent": true,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "router_unreachable",
+                "severity": "critical",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "router",
+                "title": "rtr-brno-core unreachable",
+                "body": "rtr-brno-core · router · 3 consecutive fast polls failed",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/router_unreachable/router"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-unreach",
+                "subject": "router",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:02:00Z",
+          "tick": "fast",
+          "tickSucceeded": false,
+          "consecutiveFastPollFailures": 4,
+          "snapshotAbsent": true,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "router_unreachable",
+                "severity": "critical",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "router",
+                "title": "rtr-brno-core unreachable",
+                "body": "rtr-brno-core · router · 4 consecutive fast polls failed",
+                "ts": "2026-07-11T10:02:00Z",
+                "dedupKey": "r1/router_unreachable/router"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-unreach",
+                "subject": "router",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-07-11T10:02:00Z",
+                "lastResendAt": "2026-07-11T10:02:00Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "resend_zero_disables",
+      "description": "resendAfterMin:0 never resends, however long the incident stays FIRING.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1"
+            ],
+            "direction": "down"
+          },
+          "severity": "critical",
+          "debouncePolls": 1,
+          "resendAfterMin": 0,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": false,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "link_state",
+                "severity": "critical",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "ether1",
+                "title": "ether1 link down",
+                "body": "rtr-brno-core · ether1 · went down",
+                "ts": "2026-07-11T10:00:00Z",
+                "dedupKey": "r1/link_state/ether1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-07-11T10:00:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:10:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-07-11T10:00:00Z",
+                "lastResendAt": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "resend_suppressed_while_acknowledged",
+      "description": "acknowledged suppresses resends; the RESOLVED transition still notifies and clears acknowledged.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1"
+            ],
+            "direction": "down"
+          },
+          "severity": "critical",
+          "debouncePolls": 1,
+          "resendAfterMin": 2,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "initialState": [
+        {
+          "ruleId": "r1-wan",
+          "routerId": "r1",
+          "subject": "ether1",
+          "phase": "firing",
+          "trueCount": 1,
+          "missingStreak": 0,
+          "firingNotified": true,
+          "acknowledged": true,
+          "firingSince": "2026-07-11T10:00:00Z",
+          "lastNotifiedAt": "2026-07-11T10:00:00Z"
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": false,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:02:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "acknowledged": true,
+                "lastNotifiedAt": "2026-07-11T10:00:00Z",
+                "lastResendAt": null
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:03:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": true,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "resolved",
+                "rule": "link_state",
+                "severity": "critical",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "ether1",
+                "title": "ether1 link up",
+                "body": "rtr-brno-core · ether1 · came up",
+                "ts": "2026-07-11T10:03:00Z",
+                "dedupKey": "r1/link_state/ether1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "ok",
+                "acknowledged": false,
+                "firingNotified": false,
+                "lastNotifiedAt": "2026-07-11T10:03:00Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "quiet_hours_suppresses_warning",
+      "description": "A warning firing inside the quiet-hours window is deferred (Europe/Prague, winter UTC+1).",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-cpu",
+          "routerId": "r1",
+          "type": "cpu_sustained",
+          "params": {
+            "x": 85,
+            "y": 5
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true,
+          "quietHours": {
+            "start": "22:00",
+            "end": "07:00",
+            "timeZone": "Europe/Prague"
+          }
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 90,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-01-15T23:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-cpu",
+                "subject": "cpu",
+                "phase": "pending",
+                "trueCount": 1,
+                "pendingSince": "2026-01-15T23:00:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-01-15T23:05:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-cpu",
+                "subject": "cpu",
+                "phase": "firing",
+                "deferred": "firing",
+                "firingNotified": false,
+                "firingSince": "2026-01-15T23:05:00Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "quiet_hours_critical_bypasses",
+      "description": "A critical firing bypasses quiet hours and emits inside the window.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1"
+            ],
+            "direction": "down"
+          },
+          "severity": "critical",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true,
+          "quietHours": {
+            "start": "22:00",
+            "end": "07:00",
+            "timeZone": "Europe/Prague"
+          }
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": false,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-01-15T23:30:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "link_state",
+                "severity": "critical",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "ether1",
+                "title": "ether1 link down",
+                "body": "rtr-brno-core · ether1 · went down",
+                "ts": "2026-01-15T23:30:00Z",
+                "dedupKey": "r1/link_state/ether1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-01-15T23:30:00Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "quiet_hours_boundary_emits_deferred",
+      "description": "When the quiet-hours window ends, the deferred firing emits (condition still true) with ts = emission now.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-cpu",
+          "routerId": "r1",
+          "type": "cpu_sustained",
+          "params": {
+            "x": 85,
+            "y": 5
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true,
+          "quietHours": {
+            "start": "22:00",
+            "end": "07:00",
+            "timeZone": "Europe/Prague"
+          }
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 90,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-01-16T05:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-cpu",
+                "subject": "cpu",
+                "phase": "pending",
+                "trueCount": 1,
+                "pendingSince": "2026-01-16T05:00:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-01-16T05:05:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-cpu",
+                "subject": "cpu",
+                "phase": "firing",
+                "deferred": "firing",
+                "firingNotified": false
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-01-16T06:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "cpu_sustained",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "cpu",
+                "title": "CPU 90% on rtr-brno-core",
+                "body": "rtr-brno-core · cpu · above 85% for 5 min",
+                "ts": "2026-01-16T06:00:00Z",
+                "dedupKey": "r1/cpu_sustained/cpu"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-cpu",
+                "subject": "cpu",
+                "phase": "firing",
+                "firingNotified": true,
+                "deferred": null,
+                "lastNotifiedAt": "2026-01-16T06:00:00Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "quiet_hours_overnight_window",
+      "description": "Wrap-around window 22:00-07:00: local 23:30 and 06:30 suppress; local 12:00 emits. notifyRecovery:false keeps the between-incident resolves silent (pair-cancellation).",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1"
+            ],
+            "direction": "down"
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": false,
+          "enabled": true,
+          "quietHours": {
+            "start": "22:00",
+            "end": "07:00",
+            "timeZone": "Europe/Prague"
+          }
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-01-15T22:30:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "deferred": "firing",
+                "firingNotified": false
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-01-15T22:31:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": true,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [],
+            "absentKeys": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-01-16T05:30:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "deferred": "firing",
+                "firingNotified": false
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-01-16T05:31:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": true,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [],
+            "absentKeys": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-01-16T11:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "link_state",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "ether1",
+                "title": "ether1 link down",
+                "body": "rtr-brno-core · ether1 · went down",
+                "ts": "2026-01-16T11:00:00Z",
+                "dedupKey": "r1/link_state/ether1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-01-16T11:00:00Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "quiet_hours_timezone_conversion",
+      "description": "UTC now 21:30 is outside 22:00-23:00 but Europe/Prague local 22:30 is inside, so the warning is deferred (proves tz conversion of injected now).",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1"
+            ],
+            "direction": "down"
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true,
+          "quietHours": {
+            "start": "22:00",
+            "end": "23:00",
+            "timeZone": "Europe/Prague"
+          }
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": false,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-01-15T21:30:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "deferred": "firing",
+                "firingNotified": false
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "quiet_hours_unknown_timezone_fails_open",
+      "description": "An unknown IANA zone fails open: quiet hours are ignored, the event emits, and a diagnostic is produced.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1"
+            ],
+            "direction": "down"
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true,
+          "quietHours": {
+            "start": "22:00",
+            "end": "07:00",
+            "timeZone": "Mars/Phobos"
+          }
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": false,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-01-15T23:30:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "link_state",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "ether1",
+                "title": "ether1 link down",
+                "body": "rtr-brno-core · ether1 · went down",
+                "ts": "2026-01-15T23:30:00Z",
+                "dedupKey": "r1/link_state/ether1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-01-15T23:30:00Z"
+              }
+            ],
+            "diagnostics": [
+              {
+                "ruleId": "r1-wan",
+                "code": "unknown_timezone"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "star_router_rule_applies",
+      "description": "A routerId:\"*\" rule materializes keys and dedupKeys with the concrete router id.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "any-reboot",
+          "routerId": "*",
+          "type": "reboot_detected",
+          "params": {},
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "any-reboot",
+                "subject": "uptime",
+                "phase": "ok",
+                "lastUptimeSeconds": 788645
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:01:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "resources": {
+              "cpuLoadPercent": 5,
+              "freeMemoryBytes": 800000000,
+              "totalMemoryBytes": 1000000000,
+              "uptimeSeconds": 100,
+              "version": "7.15.2 (stable)",
+              "boardName": "RB5009UG+S+"
+            }
+          },
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "reboot_detected",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "uptime",
+                "title": "rtr-brno-core rebooted",
+                "body": "rtr-brno-core · uptime · uptime dropped from 788645s to 100s",
+                "ts": "2026-07-11T10:01:00Z",
+                "dedupKey": "r1/reboot_detected/uptime"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "any-reboot",
+                "subject": "uptime",
+                "phase": "ok",
+                "lastUptimeSeconds": 100,
+                "lastNotifiedAt": "2026-07-11T10:01:00Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "unknown_rule_type_skipped_with_diagnostic",
+      "description": "An unknown rule type is skipped: no events, no keys, exactly one diagnostic (forward compatibility).",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-x",
+          "routerId": "r1",
+          "type": "flux_capacitor",
+          "params": {},
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "diagnostics": [
+              {
+                "ruleId": "r1-x",
+                "code": "unknown_rule_type"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "subject_disappears_while_firing_freezes_then_prunes",
+      "description": "A missing subject freezes the FIRING key (missingStreak++); at missingStreak>=60 the key prunes silently with no resolved event.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1"
+            ],
+            "direction": "down"
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "initialState": [
+        {
+          "ruleId": "r1-wan",
+          "routerId": "r1",
+          "subject": "ether1",
+          "phase": "firing",
+          "trueCount": 1,
+          "missingStreak": 58,
+          "firingNotified": true,
+          "acknowledged": false,
+          "firingSince": "2026-07-11T09:59:00Z",
+          "lastNotifiedAt": "2026-07-11T09:59:00Z"
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*9",
+            "name": "bridge-lan",
+            "type": "bridge",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "missingStreak": 59,
+                "firingNotified": true,
+                "firingSince": "2026-07-11T09:59:00Z",
+                "lastNotifiedAt": "2026-07-11T09:59:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:00:15Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "absentKeys": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "restart_state_reload_no_respam",
+      "description": "A reloaded FIRING+notified key produces no event for the same condition; a resend fires only when resendAfterMin elapses.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1"
+            ],
+            "direction": "down"
+          },
+          "severity": "critical",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "initialState": [
+        {
+          "ruleId": "r1-wan",
+          "routerId": "r1",
+          "subject": "ether1",
+          "phase": "firing",
+          "trueCount": 1,
+          "missingStreak": 0,
+          "firingNotified": true,
+          "acknowledged": false,
+          "firingSince": "2026-07-11T09:59:00Z",
+          "lastNotifiedAt": "2026-07-11T09:59:00Z"
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": false,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "interfaces": [
+              {
+                "id": "*1",
+                "name": "ether1",
+                "type": "ether",
+                "running": false,
+                "disabled": false,
+                "rxBytes": 1000,
+                "txBytes": 2000
+              }
+            ]
+          },
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "firingNotified": true,
+                "lastNotifiedAt": "2026-07-11T09:59:00Z",
+                "lastResendAt": null
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:59:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "link_state",
+                "severity": "critical",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "ether1",
+                "title": "ether1 link down",
+                "body": "rtr-brno-core · ether1 · went down",
+                "ts": "2026-07-11T10:59:00Z",
+                "dedupKey": "r1/link_state/ether1"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1",
+                "phase": "firing",
+                "lastNotifiedAt": "2026-07-11T10:59:00Z",
+                "lastResendAt": "2026-07-11T10:59:00Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "reboot_pulse_deferred_by_quiet_hours_emits_at_boundary",
+      "description": "A warning reboot pulse suppressed inside quiet hours defers with phase ok and emits when the window ends (design §4.7 + §3.5). Pins Java<->Swift parity on the suppressed-pulse deferral path (the §5.3 matrix had no suppressed-pulse case).",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-reboot",
+          "routerId": "r1",
+          "type": "reboot_detected",
+          "params": {},
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true,
+          "quietHours": {
+            "start": "22:00",
+            "end": "07:00",
+            "timeZone": "Europe/Prague"
+          }
+        }
+      ],
+      "initialState": [
+        {
+          "ruleId": "r1-reboot",
+          "routerId": "r1",
+          "subject": "uptime",
+          "phase": "ok",
+          "trueCount": 0,
+          "firingNotified": false,
+          "acknowledged": false,
+          "missingStreak": 0,
+          "lastUptimeSeconds": 1000
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 1000,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-01-15T23:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "snapshotPatch": {
+            "resources": {
+              "cpuLoadPercent": 5,
+              "freeMemoryBytes": 800000000,
+              "totalMemoryBytes": 1000000000,
+              "uptimeSeconds": 50,
+              "version": "7.15.2 (stable)",
+              "boardName": "RB5009UG+S+"
+            }
+          },
+          "expect": {
+            "events": [],
+            "state": [
+              {
+                "ruleId": "r1-reboot",
+                "subject": "uptime",
+                "phase": "ok",
+                "deferred": "firing",
+                "firingNotified": false,
+                "lastUptimeSeconds": 50,
+                "lastNotifiedAt": null
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-01-16T07:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [
+              {
+                "v": 1,
+                "event": "firing",
+                "rule": "reboot_detected",
+                "severity": "warning",
+                "router": {
+                  "id": "r1",
+                  "name": "rtr-brno-core"
+                },
+                "subject": "uptime",
+                "title": "rtr-brno-core rebooted",
+                "body": "rtr-brno-core · uptime · uptime dropped from 50s to 50s",
+                "ts": "2026-01-16T07:00:00Z",
+                "dedupKey": "r1/reboot_detected/uptime"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-reboot",
+                "subject": "uptime",
+                "phase": "ok",
+                "deferred": null,
+                "lastUptimeSeconds": 50,
+                "lastNotifiedAt": "2026-01-16T07:00:00Z"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "cpu_wrong_typed_params_skips_rule",
+      "description": "A wrong-typed param (x given as a string) skips the rule with an invalid_params diagnostic instead of silently falling back to a default (design §2.1). Pins Java<->Swift parity on malformed params; reachable from the YAML seed path where a quoted scalar becomes a string.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-cpu",
+          "routerId": "r1",
+          "type": "cpu_sustained",
+          "params": {
+            "x": "ninety",
+            "y": 0
+          },
+          "severity": "warning",
+          "debouncePolls": 1,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 99,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "diagnostics": [
+              {
+                "ruleId": "r1-cpu",
+                "code": "invalid_params"
+              }
+            ],
+            "absentKeys": [
+              {
+                "ruleId": "r1-cpu",
+                "subject": "cpu"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "quiet_hours_unknown_timezone_no_diagnostic_when_silent",
+      "description": "A rule with an unresolvable IANA zone emits NO unknown_timezone diagnostic on a tick where no notification is wanted (design §3.6): the diagnostic accompanies a wanted notification only. Pins Java<->Swift parity on lazy diagnostic timing (the diagnostic fires in quiet_hours_unknown_timezone_fails_open, where a firing IS wanted).",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-wan",
+          "routerId": "r1",
+          "type": "link_state",
+          "params": {
+            "ifaces": [
+              "ether1"
+            ],
+            "direction": "down"
+          },
+          "severity": "warning",
+          "debouncePolls": 2,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true,
+          "quietHours": {
+            "start": "22:00",
+            "end": "07:00",
+            "timeZone": "Mars/Phobos"
+          }
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-01-15T23:30:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "diagnostics": [],
+            "absentKeys": [
+              {
+                "ruleId": "r1-wan",
+                "subject": "ether1"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "frozen_rule_key_survives_prune_on_foreign_tick",
+      "description": "A prune-eligible informationless-OK cpu_sustained key is frozen (NOT pruned) on a fast tick because cpu_sustained evaluates only on normal ticks (design §2.4); the §2.2 informationless-OK prune still fires on its own normal tick. Pins the Java↔Swift prune-scope parity: frozen keys pass through unchanged on a foreign tick.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-cpu",
+          "routerId": "r1",
+          "type": "cpu_sustained",
+          "params": {
+            "x": 85,
+            "y": 5
+          },
+          "severity": "warning",
+          "debouncePolls": 2,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "initialState": [
+        {
+          "ruleId": "r1-cpu",
+          "routerId": "r1",
+          "subject": "cpu",
+          "phase": "ok",
+          "trueCount": 0,
+          "missingStreak": 0,
+          "acknowledged": false,
+          "lastNotifiedAt": "2026-07-11T09:58:00Z"
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "fast",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "diagnostics": [],
+            "state": [
+              {
+                "ruleId": "r1-cpu",
+                "subject": "cpu",
+                "phase": "ok",
+                "trueCount": 0,
+                "lastNotifiedAt": "2026-07-11T09:58:00Z"
+              }
+            ]
+          }
+        },
+        {
+          "now": "2026-07-11T10:00:30Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "diagnostics": [],
+            "absentKeys": [
+              {
+                "ruleId": "r1-cpu",
+                "subject": "cpu"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "unknown_rule_type_retains_existing_state_frozen",
+      "description": "An enabled rule whose type an older relay does not recognize is skipped with a diagnostic, but its pre-existing incident state is retained frozen (design §2.1/§3.9 — unknown ≠ removed), so a relay/app version skew never wipes incident state. Pins the Java↔Swift unknown-type retention parity.",
+      "router": {
+        "id": "r1",
+        "name": "rtr-brno-core"
+      },
+      "rules": [
+        {
+          "id": "r1-mystery",
+          "routerId": "r1",
+          "type": "flux_capacitor",
+          "params": {},
+          "severity": "warning",
+          "debouncePolls": 2,
+          "resendAfterMin": 60,
+          "notifyRecovery": true,
+          "enabled": true
+        }
+      ],
+      "initialState": [
+        {
+          "ruleId": "r1-mystery",
+          "routerId": "r1",
+          "subject": "reactor",
+          "phase": "firing",
+          "trueCount": 3,
+          "missingStreak": 0,
+          "firingNotified": true,
+          "acknowledged": false,
+          "firingSince": "2026-07-11T09:55:00Z",
+          "lastNotifiedAt": "2026-07-11T09:55:00Z"
+        }
+      ],
+      "baseSnapshot": {
+        "identity": "rtr-brno-core",
+        "resources": {
+          "cpuLoadPercent": 5,
+          "freeMemoryBytes": 800000000,
+          "totalMemoryBytes": 1000000000,
+          "uptimeSeconds": 788645,
+          "version": "7.15.2 (stable)",
+          "boardName": "RB5009UG+S+"
+        },
+        "healthSensors": [],
+        "interfaces": [
+          {
+            "id": "*1",
+            "name": "ether1",
+            "type": "ether",
+            "running": true,
+            "disabled": false,
+            "rxBytes": 1000,
+            "txBytes": 2000
+          }
+        ],
+        "trafficRates": [],
+        "ipAddresses": [],
+        "pppoeActiveCount": 0,
+        "netwatch": [],
+        "wireguardPeers": []
+      },
+      "steps": [
+        {
+          "now": "2026-07-11T10:00:00Z",
+          "tick": "normal",
+          "tickSucceeded": true,
+          "consecutiveFastPollFailures": 0,
+          "expect": {
+            "events": [],
+            "diagnostics": [
+              {
+                "ruleId": "r1-mystery",
+                "code": "unknown_rule_type"
+              }
+            ],
+            "state": [
+              {
+                "ruleId": "r1-mystery",
+                "subject": "reactor",
+                "phase": "firing",
+                "trueCount": 3,
+                "firingNotified": true,
+                "lastNotifiedAt": "2026-07-11T09:55:00Z"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
